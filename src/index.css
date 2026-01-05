@@ -247,3 +247,21 @@ html {
   opacity: 0.92;
   max-width: 42rem;
 }
+/* Simple readable article typography */
+.prose {
+  font-size: 18px;
+  line-height: 1.75;
+  color: var(--text);
+}
+
+.prose p {
+  margin: 0 0 16px 0;
+  color: rgba(20, 20, 20, 0.82);
+}
+
+.prose h2 {
+  margin: 28px 0 12px 0;
+  font-family: var(--serif);
+  font-size: 26px;
+  line-height: 1.2;
+}
