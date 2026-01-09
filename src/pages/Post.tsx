@@ -6,13 +6,13 @@ import { sanityClient } from "../lib/sanity";
 type SanityPost = {
   title: string;
   slug: string;
-  publishedAt?: string; // "YYYY-MM-DD" (Sanity date)
+  publishedAt?: string; // "YYYY-MM-DD"
   excerpt?: string;
   author?: string;
   categorySlug?: string;
   categoryLabel?: string;
   imageUrl?: string;
-  body?: unknown; // Portable Text
+  body?: unknown[]; // Portable Text blocks
 };
 
 const QUERY = /* groq */ `
@@ -31,11 +31,10 @@ const QUERY = /* groq */ `
 
 function formatDateDateOnly(yyyyMmDd?: string) {
   if (!yyyyMmDd) return "";
-  // Sanity "date" is YYYY-MM-DD; render it as local text WITHOUT timezone conversion
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(yyyyMmDd);
   if (!m) return yyyyMmDd;
   const [, y, mo, d] = m;
-  const dt = new Date(Number(y), Number(mo) - 1, Number(d)); // local date
+  const dt = new Date(Number(y), Number(mo) - 1, Number(d));
   if (Number.isNaN(dt.getTime())) return yyyyMmDd;
   return dt.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
 }
@@ -67,7 +66,6 @@ export default function Post() {
         setLoading(true);
 
         const data = await sanityClient.fetch<SanityPost | null>(QUERY, { slug });
-
         if (alive) setPost(data);
       } catch (err) {
         console.error("Failed to load post from Sanity:", err);
@@ -128,22 +126,12 @@ export default function Post() {
 
   return (
     <div>
-      {/* Cover */}
-      <section
-        style={{
-          borderBottom: "1px solid var(--border)",
-          background: coverBg,
-        }}
-      >
+      <section style={{ borderBottom: "1px solid var(--border)", background: coverBg }}>
         <div
           className="container"
           style={{
             padding: "34px 16px 24px 16px",
-            // subtle overlay so text stays readable on photos
-            background:
-              post.imageUrl
-                ? "linear-gradient(180deg, rgba(0,0,0,0.42), rgba(0,0,0,0.10))"
-                : "transparent",
+            background: post.imageUrl ? "rgba(0,0,0,0.18)" : "transparent",
           }}
         >
           <div className="small-muted" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -176,11 +164,8 @@ export default function Post() {
         </div>
       </section>
 
-      {/* Body */}
       <article className="container" style={{ padding: "28px 16px 60px 16px", maxWidth: 900 }}>
-        <div className="prose">
-          {post.body ? <PortableText value={post.body as any} /> : null}
-        </div>
+        <div className="prose">{post.body ? <PortableText value={post.body} /> : null}</div>
       </article>
     </div>
   );
