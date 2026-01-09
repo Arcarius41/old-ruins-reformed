@@ -25,13 +25,16 @@ export const post = defineType({
       to: [{ type: "category" }],
       validation: (Rule) => Rule.required(),
     }),
+
+    // ✅ Date-only avoids timezone "off by one day" issues
     defineField({
       name: "publishedAt",
       title: "Published date",
-      type: "datetime",
-      initialValue: () => new Date().toISOString(),
+      type: "date",
+      initialValue: () => new Date().toISOString().slice(0, 10), // "YYYY-MM-DD"
       validation: (Rule) => Rule.required(),
     }),
+
     defineField({
       name: "excerpt",
       title: "Excerpt",
@@ -39,12 +42,15 @@ export const post = defineType({
       rows: 3,
       validation: (Rule) => Rule.max(280),
     }),
+
+    // ✅ Keep the old field name so existing posts work, but label it “Cover Image”
     defineField({
       name: "heroImage",
-      title: "Hero image",
+      title: "Cover Image",
       type: "image",
       options: { hotspot: true },
     }),
+
     defineField({
       name: "body",
       title: "Body",
@@ -53,6 +59,7 @@ export const post = defineType({
       validation: (Rule) => Rule.required(),
     }),
   ],
+
   orderings: [
     {
       title: "Published date (newest)",
@@ -60,6 +67,7 @@ export const post = defineType({
       by: [{ field: "publishedAt", direction: "desc" }],
     },
   ],
+
   preview: {
     select: {
       title: "title",

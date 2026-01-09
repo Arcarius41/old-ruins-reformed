@@ -1,52 +1,125 @@
+import { useEffect, useMemo, useState } from "react";
 import ArticleCard from "../components/ArticleCard";
 import type { PostPreview } from "../components/ArticleCard";
+import { sanityClient } from "../lib/sanity";
 import Hero from "../components/Hero";
 
-const mockPosts: PostPreview[] = [
-  {
-    title: "Recovering the Reformed Imagination",
-    slug: "recovering-the-reformed-imagination",
-    categorySlug: "journal-articles",
-    categoryLabel: "Journal Articles",
-    author: "Joseph",
-    publishedAt: "2026-01-02",
-    excerpt:
-      "A short opening that previews the thesis. This is where Joseph’s voice comes through in a calm, confident way. The card layout should feel inviting and readable.",
-    coverColor: "linear-gradient(135deg, rgba(156,199,178,0.75), rgba(20,20,20,0.08))",
-  },
-  {
-    title: "Mid-Week Musings: On Prayer and Attention",
-    slug: "mid-week-musings-prayer-and-attention",
-    categorySlug: "devotionals",
-    categoryLabel: "Devotionals",
-    author: "Joseph",
-    publishedAt: "2025-12-18",
-    excerpt:
-      "A devotional reflection that’s short, nourishing, and meant to be revisited. The homepage highlights newest across all categories by default.",
-    coverColor: "linear-gradient(135deg, rgba(156,199,178,0.55), rgba(20,20,20,0.05))",
-  },
-  {
-    title: "A Short-form Shelf Entry: Why Creeds Still Matter",
-    slug: "why-creeds-still-matter",
-    categorySlug: "blogs",
-    categoryLabel: "Blogs",
-    author: "Joseph",
-    publishedAt: "2025-11-28",
-    excerpt:
-      "A blog-style piece: punchier, shorter, and written for quick reading—still cleanly organized under the category tabs.",
-    coverColor: "linear-gradient(135deg, rgba(156,199,178,0.45), rgba(20,20,20,0.04))",
-  },
-];
+type SanityPost = {
+  title: string;
+  slug: string;
+  publishedAt?: string;
+  excerpt?: string;
+  categorySlug?: string;
+  categoryLabel?: string;
+  imageUrl?: string;
+};
+
+const FALLBACKS: Record<string, string> = {
+  "journal-articles":
+    "linear-gradient(135deg, rgba(156,199,178,0.75), rgba(20,20,20,0.08))",
+  devotionals:
+    "linear-gradient(135deg, rgba(156,199,178,0.55), rgba(20,20,20,0.05))",
+  blogs: "linear-gradient(135deg, rgba(156,199,178,0.45), rgba(20,20,20,0.04))",
+  reviews:
+    "linear-gradient(135deg, rgba(156,199,178,0.40), rgba(20,20,20,0.06))",
+  resources:
+    "linear-gradient(135deg, rgba(156,199,178,0.35), rgba(20,20,20,0.05))",
+};
+
+const QUERY = /* groq */ `
+*[_type == "post"] | order(publishedAt desc)[0...6]{
+  title,
+  "slug": slug.current,
+  publishedAt,
+  excerpt,
+  "categorySlug": category->slug.current,
+  "categoryLabel": category->title,
+  "imageUrl": heroImage.asset->url
+}
+`;
 
 export default function Home() {
+  const [posts, setPosts] = useState<PostPreview[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fallbackCover = useMemo(() => {
+    return (categorySlug?: string) =>
+      FALLBACKS[categorySlug || ""] ||
+      "linear-gradient(135deg, rgba(156,199,178,0.45), rgba(20,20,20,0.04))";
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+
+    async function run() {
+      try {
+        setError(null);
+        setLoading(true);
+
+        const data = await sanityClient.fetch<SanityPost[]>(QUERY);
+
+        const mapped: PostPreview[] = data.map((p) => ({
+          title: p.title,
+          slug: p.slug,
+          categorySlug: p.categorySlug || "",
+          categoryLabel: p.categoryLabel || "Uncategorized",
+          author: "Joseph",
+          publishedAt: (p.publishedAt || "").slice(0, 10),
+          excerpt: p.excerpt || "",
+          // ArticleCard uses this as a background value; we can pass either a gradient or a url(...) background
+          coverColor: p.imageUrl
+            ? `url(${p.imageUrl}) center/cover no-repeat`
+            : fallbackCover(p.categorySlug),
+        }));
+
+        if (alive) setPosts(mapped);
+      } catch (err) {
+        console.error("Failed to load posts from Sanity:", err);
+        if (alive) {
+          setError(err instanceof Error ? err.message : String(err));
+          setPosts([]);
+        }
+      } finally {
+        if (alive) setLoading(false);
+      }
+    }
+
+    run();
+
+    return () => {
+      alive = false;
+    };
+  }, [fallbackCover]);
+
   return (
     <div>
-      {/* HERO (now uses your Hero component + banner image) */}
+      {/* HERO */}
       <Hero
         kicker="Isaiah 61:4"
         title="The Old Ruins Reformed"
         subtitle="Essays, devotionals, and longer-form writing aimed at rebuilding what’s been neglected—patiently, thoughtfully, and with clarity."
       />
+
+      {/* Quick actions under hero (keeps your original CTA buttons) */}
+      <section
+        style={{
+          borderBottom: "1px solid var(--border)",
+          background:
+            "radial-gradient(1200px 500px at 20% 10%, rgba(156,199,178,0.22), rgba(251,251,250,0.0))",
+        }}
+      >
+        <div className="container" style={{ padding: "18px 16px 22px 16px" }}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <a className="btn btn-primary" href="#latest" style={{ textDecoration: "none" }}>
+              Read the latest
+            </a>
+            <a className="btn" href="/articles" style={{ textDecoration: "none" }}>
+              Browse all
+            </a>
+          </div>
+        </div>
+      </section>
 
       {/* LATEST */}
       <section id="latest" className="container" style={{ padding: "34px 16px 24px 16px" }}>
@@ -66,9 +139,17 @@ export default function Home() {
         </div>
 
         <div style={{ marginTop: 18, display: "grid", gap: 16 }}>
-          {mockPosts.map((p) => (
-            <ArticleCard key={p.slug} post={p} />
-          ))}
+          {loading ? (
+            <div className="small-muted">Loading posts…</div>
+          ) : error ? (
+            <div className="small-muted" style={{ whiteSpace: "pre-wrap" }}>
+              Sanity error: {error}
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="small-muted">No posts found yet. (Publish one in Sanity Studio.)</div>
+          ) : (
+            posts.map((p) => <ArticleCard key={p.slug} post={p} />)
+          )}
         </div>
       </section>
 

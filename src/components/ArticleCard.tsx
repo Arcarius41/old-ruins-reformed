@@ -11,12 +11,30 @@ export type PostPreview = {
   coverColor?: string;
 };
 
-function formatDate(iso?: string) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+function formatDate(dateStr?: string) {
+  if (!dateStr) return "";
+
+  // If Sanity returns "YYYY-MM-DD" (date-only), construct a LOCAL date to avoid UTC off-by-one.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const local = new Date(y, (m ?? 1) - 1, d ?? 1);
+    return local.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  }
+
+  // If Sanity returns a full ISO datetime, normal parsing is fine.
+  const dt = new Date(dateStr);
+  if (Number.isNaN(dt.getTime())) return "";
+  return dt.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
+
 
 export default function ArticleCard({ post }: { post: PostPreview }) {
   const date = formatDate(post.publishedAt);
