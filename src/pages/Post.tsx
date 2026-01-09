@@ -1,70 +1,114 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { PortableText } from "@portabletext/react";
+import { sanityClient } from "../lib/sanity";
 
-type MockPost = {
+type SanityPost = {
   title: string;
   slug: string;
-  categorySlug: string;
-  categoryLabel: string;
-  author: string;
-  publishedAt: string;
-  coverColor?: string;
-  body: Array<{ type: "p" | "h2"; text: string }>;
+  publishedAt?: string; // "YYYY-MM-DD" (Sanity date)
+  excerpt?: string;
+  author?: string;
+  categorySlug?: string;
+  categoryLabel?: string;
+  imageUrl?: string;
+  body?: unknown; // Portable Text
 };
 
-const mockPosts: MockPost[] = [
-  {
-    title: "Recovering the Reformed Imagination",
-    slug: "recovering-the-reformed-imagination",
-    categorySlug: "journal-articles",
-    categoryLabel: "Journal Articles",
-    author: "Joseph",
-    publishedAt: "2026-01-02",
-    coverColor: "linear-gradient(135deg, rgba(156,199,178,0.75), rgba(20,20,20,0.08))",
-    body: [
-      { type: "p", text: "This is placeholder content. Later, this will come from Sanity as rich text." },
-      { type: "p", text: "For now, we’re building the layout: readable typography, spacing, and a simple structure." },
-      { type: "h2", text: "A Second Heading" },
-      { type: "p", text: "More placeholder text to show how a longer article will feel on the page." },
-    ],
-  },
-  {
-    title: "Mid-Week Musings: On Prayer and Attention",
-    slug: "mid-week-musings-prayer-and-attention",
-    categorySlug: "devotionals",
-    categoryLabel: "Devotionals",
-    author: "Joseph",
-    publishedAt: "2025-12-18",
-    coverColor: "linear-gradient(135deg, rgba(156,199,178,0.55), rgba(20,20,20,0.05))",
-    body: [
-      { type: "p", text: "A devotional entry typically reads shorter and calmer. This layout should support both." },
-      { type: "p", text: "Later, Joseph will paste his devotional text into the CMS and it will render here." },
-    ],
-  },
-  {
-    title: "A Short-form Shelf Entry: Why Creeds Still Matter",
-    slug: "why-creeds-still-matter",
-    categorySlug: "blogs",
-    categoryLabel: "Blogs",
-    author: "Joseph",
-    publishedAt: "2025-11-28",
-    coverColor: "linear-gradient(135deg, rgba(156,199,178,0.45), rgba(20,20,20,0.04))",
-    body: [
-      { type: "p", text: "Blog entries can be punchier and shorter, but the design should still feel editorial." },
-      { type: "p", text: "This is placeholder content until Sanity is connected." },
-    ],
-  },
-];
+const QUERY = /* groq */ `
+*[_type == "post" && slug.current == $slug][0]{
+  title,
+  "slug": slug.current,
+  publishedAt,
+  excerpt,
+  author,
+  "categorySlug": category->slug.current,
+  "categoryLabel": category->title,
+  "imageUrl": heroImage.asset->url,
+  body
+}
+`;
 
-function formatDate(iso: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+function formatDateDateOnly(yyyyMmDd?: string) {
+  if (!yyyyMmDd) return "";
+  // Sanity "date" is YYYY-MM-DD; render it as local text WITHOUT timezone conversion
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(yyyyMmDd);
+  if (!m) return yyyyMmDd;
+  const [, y, mo, d] = m;
+  const dt = new Date(Number(y), Number(mo) - 1, Number(d)); // local date
+  if (Number.isNaN(dt.getTime())) return yyyyMmDd;
+  return dt.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
 }
 
 export default function Post() {
-  const { slug } = useParams();
+  const { slug } = useParams<{ slug: string }>();
 
-  const post = mockPosts.find((p) => p.slug === slug);
+  const [post, setPost] = useState<SanityPost | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const coverBg = useMemo(() => {
+    if (post?.imageUrl) return `url(${post.imageUrl}) center/cover no-repeat`;
+    return "linear-gradient(135deg, rgba(156,199,178,0.55), rgba(20,20,20,0.06))";
+  }, [post?.imageUrl]);
+
+  useEffect(() => {
+    let alive = true;
+
+    async function run() {
+      if (!slug) {
+        setPost(null);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setError(null);
+        setLoading(true);
+
+        const data = await sanityClient.fetch<SanityPost | null>(QUERY, { slug });
+
+        if (alive) setPost(data);
+      } catch (err) {
+        console.error("Failed to load post from Sanity:", err);
+        if (alive) {
+          setError(err instanceof Error ? err.message : String(err));
+          setPost(null);
+        }
+      } finally {
+        if (alive) setLoading(false);
+      }
+    }
+
+    run();
+    return () => {
+      alive = false;
+    };
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <div className="container" style={{ padding: "34px 16px 54px 16px", maxWidth: 900 }}>
+        <div className="small-muted">Loading post…</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container" style={{ padding: "34px 16px 54px 16px", maxWidth: 900 }}>
+        <h1 style={{ fontFamily: "var(--serif)" }}>Couldn’t load post</h1>
+        <p className="small-muted" style={{ whiteSpace: "pre-wrap" }}>
+          Sanity error: {error}
+        </p>
+        <div style={{ marginTop: 16 }}>
+          <Link to="/articles" className="btn" style={{ textDecoration: "none" }}>
+            Back to Articles
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (!post) {
     return (
@@ -80,25 +124,44 @@ export default function Post() {
     );
   }
 
+  const dateLabel = formatDateDateOnly(post.publishedAt);
+
   return (
     <div>
       {/* Cover */}
       <section
         style={{
           borderBottom: "1px solid var(--border)",
-          background: post.coverColor ?? "linear-gradient(135deg, rgba(156,199,178,0.5), rgba(20,20,20,0.05))",
+          background: coverBg,
         }}
       >
-        <div className="container" style={{ padding: "34px 16px 24px 16px" }}>
+        <div
+          className="container"
+          style={{
+            padding: "34px 16px 24px 16px",
+            // subtle overlay so text stays readable on photos
+            background:
+              post.imageUrl
+                ? "linear-gradient(180deg, rgba(0,0,0,0.42), rgba(0,0,0,0.10))"
+                : "transparent",
+          }}
+        >
           <div className="small-muted" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <Link
-              to={`/category/${post.categorySlug}`}
-              style={{ textDecoration: "none", fontWeight: 800, color: "var(--accent-strong)" }}
-            >
-              {post.categoryLabel}
-            </Link>
-            <span>• {post.author}</span>
-            <span>• {formatDate(post.publishedAt)}</span>
+            {post.categorySlug ? (
+              <Link
+                to={`/category/${post.categorySlug}`}
+                style={{ textDecoration: "none", fontWeight: 800, color: "var(--accent-strong)" }}
+              >
+                {post.categoryLabel ?? "Category"}
+              </Link>
+            ) : (
+              <span style={{ fontWeight: 800, color: "var(--accent-strong)" }}>
+                {post.categoryLabel ?? "Uncategorized"}
+              </span>
+            )}
+
+            {post.author ? <span>• {post.author}</span> : null}
+            {dateLabel ? <span>• {dateLabel}</span> : null}
           </div>
 
           <h1 style={{ marginTop: 10, fontFamily: "var(--serif)", fontSize: 46, maxWidth: 920 }}>
@@ -116,10 +179,7 @@ export default function Post() {
       {/* Body */}
       <article className="container" style={{ padding: "28px 16px 60px 16px", maxWidth: 900 }}>
         <div className="prose">
-          {post.body.map((block, idx) => {
-            if (block.type === "h2") return <h2 key={idx}>{block.text}</h2>;
-            return <p key={idx}>{block.text}</p>;
-          })}
+          {post.body ? <PortableText value={post.body as any} /> : null}
         </div>
       </article>
     </div>

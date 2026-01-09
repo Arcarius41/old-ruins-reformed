@@ -12,7 +12,10 @@ type SanityPost = {
   categorySlug?: string;
   categoryLabel?: string;
   imageUrl?: string;
+  author?: string;
+
 };
+
 
 const FALLBACKS: Record<string, string> = {
   "journal-articles":
@@ -32,12 +35,12 @@ const QUERY = /* groq */ `
   "slug": slug.current,
   publishedAt,
   excerpt,
+  author,
   "categorySlug": category->slug.current,
   "categoryLabel": category->title,
   "imageUrl": heroImage.asset->url
 }
 `;
-
 export default function Home() {
   const [posts, setPosts] = useState<PostPreview[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -64,7 +67,7 @@ export default function Home() {
           slug: p.slug,
           categorySlug: p.categorySlug || "",
           categoryLabel: p.categoryLabel || "Uncategorized",
-          author: "Joseph",
+          author: p.author || "Joseph",
           publishedAt: (p.publishedAt || "").slice(0, 10),
           excerpt: p.excerpt || "",
           // ArticleCard uses this as a background value; we can pass either a gradient or a url(...) background
@@ -101,8 +104,8 @@ export default function Home() {
         subtitle="Essays, devotionals, and longer-form writing aimed at rebuilding what’s been neglected—patiently, thoughtfully, and with clarity."
       />
 
-      {/* Quick actions under hero (keeps your original CTA buttons) */}
-      <section
+      {/* Quick actions under hero */}
+      <div
         style={{
           borderBottom: "1px solid var(--border)",
           background:
@@ -119,7 +122,8 @@ export default function Home() {
             </a>
           </div>
         </div>
-      </section>
+      </div>
+
 
       {/* LATEST */}
       <section id="latest" className="container" style={{ padding: "34px 16px 24px 16px" }}>

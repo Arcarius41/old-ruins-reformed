@@ -26,6 +26,14 @@ export const post = defineType({
       validation: (Rule) => Rule.required(),
     }),
 
+    defineField({
+      name: "author",
+      title: "Author",
+      type: "string",
+      initialValue: "Joseph",
+      validation: (Rule) => Rule.required(),
+    }),
+
     // ✅ Date-only avoids timezone "off by one day" issues
     defineField({
       name: "publishedAt",
