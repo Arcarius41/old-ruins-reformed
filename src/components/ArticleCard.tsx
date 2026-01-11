@@ -35,29 +35,26 @@ function formatDate(dateStr?: string) {
   });
 }
 
-
 export default function ArticleCard({ post }: { post: PostPreview }) {
   const date = formatDate(post.publishedAt);
 
-  return (
-    <article className="card" style={{ overflow: "hidden" }}>
-      {/* Responsive grid: stacks on small screens */}
-      <div className="article-card">
-        {/* Image placeholder */}
-        <div
-          className="article-card__media"
-          style={{
-            background:
-              post.coverColor ??
-              "linear-gradient(135deg, rgba(156,199,178,0.65), rgba(20,20,20,0.06))",
-          }}
-        />
+  const mediaBackground =
+    post.coverColor ??
+    "linear-gradient(135deg, rgba(156,199,178,0.65), rgba(20,20,20,0.06))";
 
+  return (
+    <article className="card article-card-wrap">
+      <div className="article-card">
+        {/* Media */}
+        <div className="article-card__media" style={{ background: mediaBackground }} />
+
+        {/* Content */}
         <div className="article-card__content">
           <div className="small-muted article-card__meta">
             <Link
               to={`/category/${post.categorySlug}`}
-              style={{ textDecoration: "none", fontWeight: 700, color: "var(--accent-strong)" }}
+              className="article-card__category"
+              style={{ textDecoration: "none" }}
             >
               {post.categoryLabel}
             </Link>
@@ -66,13 +63,19 @@ export default function ArticleCard({ post }: { post: PostPreview }) {
           </div>
 
           <h3 className="article-card__title" style={{ fontFamily: "var(--serif)" }}>
-            {post.title}
+            <Link
+              to={`/article/${post.slug}`}
+              className="article-card__titleLink"
+              style={{ textDecoration: "none", color: "inherit" }}
+            >
+              {post.title}
+            </Link>
           </h3>
 
-          <p className="article-card__excerpt">{post.excerpt}</p>
+          {post.excerpt ? <p className="article-card__excerpt">{post.excerpt}</p> : null}
 
-          <div style={{ marginTop: 14 }}>
-            <Link to={`/article/${post.slug}`} className="btn" style={{ textDecoration: "none", display: "inline-block" }}>
+          <div className="article-card__actions">
+            <Link to={`/article/${post.slug}`} className="btn btn-primary" style={{ textDecoration: "none" }}>
               Read more
             </Link>
           </div>

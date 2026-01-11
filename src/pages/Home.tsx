@@ -13,9 +13,7 @@ type SanityPost = {
   categoryLabel?: string;
   imageUrl?: string;
   author?: string;
-
 };
-
 
 const FALLBACKS: Record<string, string> = {
   "journal-articles":
@@ -41,6 +39,7 @@ const QUERY = /* groq */ `
   "imageUrl": heroImage.asset->url
 }
 `;
+
 export default function Home() {
   const [posts, setPosts] = useState<PostPreview[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -70,7 +69,6 @@ export default function Home() {
           author: p.author || "Joseph",
           publishedAt: (p.publishedAt || "").slice(0, 10),
           excerpt: p.excerpt || "",
-          // ArticleCard uses this as a background value; we can pass either a gradient or a url(...) background
           coverColor: p.imageUrl
             ? `url(${p.imageUrl}) center/cover no-repeat`
             : fallbackCover(p.categorySlug),
@@ -94,6 +92,9 @@ export default function Home() {
       alive = false;
     };
   }, [fallbackCover]);
+
+  const featured = posts.slice(0, 2);
+  const rest = posts.slice(2);
 
   return (
     <div>
@@ -124,7 +125,6 @@ export default function Home() {
         </div>
       </div>
 
-
       {/* LATEST */}
       <section id="latest" className="container" style={{ padding: "34px 16px 24px 16px" }}>
         <div
@@ -142,7 +142,7 @@ export default function Home() {
           </a>
         </div>
 
-        <div style={{ marginTop: 18, display: "grid", gap: 16 }}>
+        <div style={{ marginTop: 18 }}>
           {loading ? (
             <div className="small-muted">Loading posts…</div>
           ) : error ? (
@@ -152,33 +152,44 @@ export default function Home() {
           ) : posts.length === 0 ? (
             <div className="small-muted">No posts found yet. (Publish one in Sanity Studio.)</div>
           ) : (
-            posts.map((p) => <ArticleCard key={p.slug} post={p} />)
+            <>
+              {/* Featured row */}
+              <div className="home-featured">
+                {featured.map((p) => (
+                  <div className="home-featured__item" key={p.slug}>
+                    <ArticleCard post={p} />
+                  </div>
+                ))}
+              </div>
+
+              {/* Remaining posts */}
+              {rest.length > 0 ? (
+                <div className="home-latest-list">
+                  {rest.map((p) => (
+                    <ArticleCard key={p.slug} post={p} />
+                  ))}
+                </div>
+              ) : null}
+            </>
           )}
         </div>
       </section>
 
       {/* SUBSCRIBE */}
       <section className="container" style={{ padding: "10px 16px 54px 16px" }}>
-        <div className="card" style={{ padding: 22 }}>
+        <div className="card subscribe-card">
           <h2 style={{ fontFamily: "var(--serif)", fontSize: 26 }}>Subscribe</h2>
           <p style={{ marginTop: 8, color: "var(--muted)", maxWidth: 720 }}>
-            Get new posts by email. (We’ll wire this to Brevo once the CMS is connected.)
+            Get new posts by email. (We’ll connect this to EmailOctopus once Joseph’s account is set up.)
           </p>
 
-          <form style={{ marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <form className="subscribe-form" style={{ marginTop: 14 }}>
             <input
               type="email"
               placeholder="Email address"
-              style={{
-                padding: "12px 14px",
-                borderRadius: 14,
-                border: "1px solid rgba(20,20,20,0.18)",
-                minWidth: 280,
-                flex: "1 1 280px",
-                background: "white",
-              }}
+              className="subscribe-input"
             />
-            <button type="button" className="btn btn-primary">
+            <button type="button" className="btn btn-primary subscribe-button">
               Subscribe
             </button>
           </form>

@@ -2,14 +2,31 @@ import { createClient } from "@sanity/client";
 import { createImageUrlBuilder } from "@sanity/image-url";
 import type { SanityImageSource } from "@sanity/image-url";
 
-const projectId = import.meta.env.VITE_SANITY_PROJECT_ID as string;
-const dataset = import.meta.env.VITE_SANITY_DATASET as string;
+const projectId = import.meta.env.VITE_SANITY_PROJECT_ID;
+const dataset = import.meta.env.VITE_SANITY_DATASET;
+
+// Fail loudly if env vars are missing.
+// This prevents "it worked in dev but not in preview/prod" mysteries.
+if (!projectId || !dataset) {
+  // Keep the message very explicit and actionable.
+  throw new Error(
+    [
+      "Missing Sanity environment variables.",
+      "Make sure these are set before running build/preview:",
+      "  VITE_SANITY_PROJECT_ID",
+      "  VITE_SANITY_DATASET",
+      "",
+      "If you just added/edited .env/.env.local, restart the dev server and rebuild.",
+    ].join("\n")
+  );
+}
 
 export const sanityClient = createClient({
   projectId,
   dataset,
   apiVersion: "2025-01-01",
-  useCdn: false, // IMPORTANT while testing so you don't get stale "0 posts" from CDN
+  // For now: no CDN so content updates show immediately while testing
+  useCdn: false,
 });
 
 const builder = createImageUrlBuilder(sanityClient);

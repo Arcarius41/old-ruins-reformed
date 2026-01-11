@@ -8,8 +8,8 @@ const navLinkStyle = ({ isActive }: { isActive: boolean }) => ({
   padding: "0.55rem 0.75rem",
   borderRadius: "12px",
   color: "inherit",
-  background: isActive ? "rgba(0,0,0,0.06)" : "transparent",
-  fontWeight: 600,
+  background: isActive ? "rgba(255,255,255,0.14)" : "transparent",
+  fontWeight: 650,
 });
 
 export default function Header() {
@@ -17,6 +17,7 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const location = useLocation();
+  const isHome = location.pathname === "/";
 
   const navItems: NavItem[] = useMemo(
     () => [
@@ -32,13 +33,21 @@ export default function Header() {
     []
   );
 
-  // Sticky header scroll behavior
+  // Scroll behavior: on Home, start as overlay until user scrolls.
+  // On other pages, treat it as "scrolled" immediately so the header is readable on light backgrounds.
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
+    const onScroll = () => {
+      if (!isHome) {
+        setScrolled(true);
+        return;
+      }
+      setScrolled(window.scrollY > 24);
+    };
+
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [isHome]);
 
   // Close menu on route change
   useEffect(() => {
@@ -69,9 +78,16 @@ export default function Header() {
   }, [menuOpen]);
 
   return (
-    <header className={`site-header ${scrolled ? "site-header--scrolled" : ""}`}>
+    <header
+      className={`site-header ${
+        isHome ? "site-header--overlay" : "site-header--solid"
+      } ${scrolled ? "site-header--scrolled" : ""}`}
+    >
       <div className="site-header__inner container">
-        <NavLink to="/" className={`site-brand ${scrolled ? "site-brand--scrolled" : ""}`}>
+        <NavLink
+          to="/"
+          className={`site-brand ${scrolled ? "site-brand--scrolled" : ""}`}
+        >
           The Old Ruins Reformed
         </NavLink>
 
@@ -94,7 +110,6 @@ export default function Header() {
             aria-controls="mobile-menu"
             onClick={() => setMenuOpen((v) => !v)}
           >
-            {/* simple hamburger icon */}
             <span className="menu-icon" aria-hidden="true">
               <span />
               <span />
@@ -108,12 +123,7 @@ export default function Header() {
             role="menu"
           >
             {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                style={navLinkStyle}
-                role="menuitem"
-              >
+              <NavLink key={item.to} to={item.to} style={navLinkStyle} role="menuitem">
                 {item.label}
               </NavLink>
             ))}

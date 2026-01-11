@@ -1,67 +1,85 @@
-/* ArticleCard responsive layout */
-.article-card {
-  display: grid;
-  grid-template-columns: 240px 1fr;
-  gap: 0;
+/* =========================
+   GLOBAL DESIGN TOKENS
+========================= */
+
+:root {
+  /* Color palette: warm paper + ink + pasture green */
+  --bg: #fbfbfa;
+  --surface: rgba(255, 255, 255, 0.72);
+  --text: rgba(16, 24, 20, 0.92);
+  --muted: rgba(16, 24, 20, 0.62);
+  --border: rgba(16, 24, 20, 0.14);
+
+  --accent: #2f6f4e; /* pasture green */
+  --accent-2: #1f4d37; /* deeper green */
+
+  /* Typography: scholarly + modern */
+  --serif: ui-serif, Georgia, "Times New Roman", Times, serif;
+  --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial,
+    "Noto Sans", "Liberation Sans", sans-serif;
+
+  --radius: 18px;
 }
 
-.article-card__media {
-  min-height: 180px;
-  border-right: 1px solid var(--border);
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
 }
 
-.article-card__content {
-  padding: 18px;
+a {
+  color: inherit;
 }
 
-.article-card__meta {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+/* Helpful layout container */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 16px;
 }
 
-.article-card__title {
-  margin-top: 10px;
-  font-size: 24px;
+/* Make sure content doesn’t hide under header on anchor jumps */
+html {
+  scroll-padding-top: 90px;
 }
 
-.article-card__excerpt {
-  margin-top: 10px;
-  color: var(--muted);
-  max-width: 680px;
-}
+/* =========================
+   HEADER (fixed overlay + scroll transition)
+========================= */
 
-/* Mobile */
-@media (max-width: 720px) {
-  .article-card {
-    grid-template-columns: 1fr;
-  }
-
-  .article-card__media {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-    min-height: 200px;
-  }
-
-  .article-card__content {
-    padding: 16px;
-  }
-
-  .article-card__title {
-    font-size: 22px;
-  }
-}
-/* Sticky header with scroll transition */
 .site-header {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 50;
 
-  /* “overlay” feel at top */
+  /* default (solid pages): use normal text color */
+  color: var(--text);
+
   background: transparent;
-  transition: background 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
   border-bottom: 1px solid transparent;
   backdrop-filter: blur(8px);
+  transition: background 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+
+  /* ensure dropdown isn't clipped */
+  overflow: visible;
+}
+
+/* Home hero overlay mode: white text on top of hero */
+.site-header--overlay {
+  color: #f7f7f4;
+}
+
+/* Solid pages: start as scrolled-like bar */
+.site-header--solid {
+  background: rgba(47, 111, 78, 0.78);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
+  color: #f7f7f4;
 }
 
 .site-header__inner {
@@ -81,6 +99,7 @@
   font-family: var(--serif);
   font-size: 22px;
   transition: transform 180ms ease, font-size 180ms ease, opacity 180ms ease;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
 .site-brand--scrolled {
@@ -94,16 +113,14 @@
   gap: 6px;
 }
 
+/* Scrolled state: green glass */
 .site-header--scrolled {
-  background: rgba(251, 251, 250, 0.92); /* matches --bg */
-  border-bottom: 1px solid var(--border);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  background: rgba(47, 111, 78, 0.78);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
+  color: #f7f7f4;
 }
 
-/* Make sure content doesn’t hide under header on anchor jumps */
-html {
-  scroll-padding-top: 90px;
-}
 /* Desktop vs mobile nav */
 .site-nav--desktop {
   display: flex;
@@ -114,10 +131,21 @@ html {
   position: relative;
 }
 
+/* Nav pills in both states */
+.site-header .site-nav a {
+  color: inherit;
+  background: rgba(255, 255, 255, 0.10);
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
+}
+
+.site-header .site-nav a:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
 /* Hamburger button */
 .menu-button {
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.18);
   border-radius: 14px;
   padding: 10px 12px;
   cursor: pointer;
@@ -125,7 +153,8 @@ html {
 }
 
 .menu-button:hover {
-  border-color: rgba(20, 20, 20, 0.2);
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(0, 0, 0, 0.22);
 }
 
 .menu-icon {
@@ -138,7 +167,7 @@ html {
   display: block;
   width: 18px;
   height: 2px;
-  background: rgba(20, 20, 20, 0.75);
+  background: rgba(247, 247, 244, 0.92);
   border-radius: 2px;
 }
 
@@ -147,34 +176,20 @@ html {
   position: fixed;
   left: 16px;
   right: 16px;
-
-  /* adjust this if your header is taller */
-  top: 48px;
+  top: 56px;
 
   padding: 10px;
   border-radius: 16px;
-  background: rgba(251, 251, 250, 0.98);
-  border: 1px solid var(--border);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+  background: rgba(47, 111, 78, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
 
-  /* keep it on-screen */
   max-height: calc(100vh - 92px);
   overflow: auto;
 
   display: none;
   z-index: 999;
 }
-
-.mobile-menu--open {
-  display: grid;
-  gap: 6px;
-}
-
-/* Make sure sticky header doesn't clip children */
-.site-header {
-  overflow: visible;
-}
-
 
 .mobile-menu--open {
   display: grid;
@@ -223,7 +238,7 @@ html {
   position: relative;
   color: #f7f7f4;
   max-width: 780px;
-  padding: 64px 16px 44px 16px;
+  padding: 120px 16px 44px 16px;
 }
 
 .hero__kicker {
@@ -247,7 +262,69 @@ html {
   opacity: 0.92;
   max-width: 42rem;
 }
-/* Simple readable article typography */
+
+/* =========================
+   ARTICLE CARD (responsive layout)
+========================= */
+
+.article-card {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 0;
+}
+
+.article-card__media {
+  min-height: 180px;
+  border-right: 1px solid var(--border);
+}
+
+.article-card__content {
+  padding: 18px;
+}
+
+.article-card__meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.article-card__title {
+  margin-top: 10px;
+  font-size: 24px;
+}
+
+.article-card__excerpt {
+  margin-top: 10px;
+  color: var(--muted);
+  max-width: 680px;
+}
+
+/* Mobile */
+@media (max-width: 720px) {
+  .article-card {
+    grid-template-columns: 1fr;
+  }
+
+  .article-card__media {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    min-height: 200px;
+  }
+
+  .article-card__content {
+    padding: 16px;
+  }
+
+  .article-card__title {
+    font-size: 22px;
+  }
+}
+
+/* =========================
+   PROSE (article typography)
+========================= */
+
 .prose {
   font-size: 18px;
   line-height: 1.75;
@@ -264,4 +341,166 @@ html {
   font-family: var(--serif);
   font-size: 26px;
   line-height: 1.2;
+}
+
+/* =========================
+   HOME: Featured Latest Layout
+========================= */
+
+.home-featured {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.home-featured__item .article-card {
+  grid-template-columns: 1fr;
+}
+
+.home-featured__item .article-card__media {
+  border-right: none;
+  border-bottom: 1px solid var(--border);
+  min-height: 280px;
+}
+
+.home-featured__item .article-card__title {
+  font-size: 30px;
+  line-height: 1.12;
+}
+
+.home-featured__item .article-card__excerpt {
+  font-size: 16px;
+  max-width: 60ch;
+}
+
+.home-latest-list {
+  margin-top: 16px;
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 900px) {
+  .home-featured {
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+  }
+
+  .home-featured__item .article-card__media {
+    min-height: 320px;
+  }
+}
+
+/* =========================
+   ARTICLE CARD: Modern polish
+========================= */
+
+.article-card-wrap {
+  overflow: hidden;
+  border-radius: var(--radius);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.article-card-wrap:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
+}
+
+.article-card__media {
+  background-position: center;
+  background-size: cover;
+  position: relative;
+}
+
+/* Subtle overlay so titles/excerpts feel consistent even with bright images */
+.article-card__media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(16, 24, 20, 0.10),
+    rgba(16, 24, 20, 0.04)
+  );
+}
+
+.article-card__category {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 750;
+  color: var(--accent);
+}
+
+.article-card__category:hover {
+  color: var(--accent-2);
+}
+
+.article-card__titleLink:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.article-card__actions {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* =========================
+   SUBSCRIBE: Force sane sizing (mobile proof)
+========================= */
+
+.subscribe-card {
+  padding: 22px;
+}
+
+.subscribe-form {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.subscribe-input {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+
+  width: 100%;
+  max-width: 520px;
+
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+
+  padding: 0 14px !important;
+  line-height: 42px !important;
+
+  border-radius: 10px;
+  border: 1px solid rgba(20, 20, 20, 0.18);
+  background: #fff;
+  font-size: 16px;
+}
+
+.subscribe-button {
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+
+  padding: 0 18px !important;
+  border-radius: 10px;
+}
+
+@media (max-width: 520px) {
+  .subscribe-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .subscribe-input,
+  .subscribe-button {
+    width: 100%;
+    max-width: none;
+  }
 }
