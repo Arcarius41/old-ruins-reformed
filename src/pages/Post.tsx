@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { PortableText } from "@portabletext/react";
 import { sanityClient } from "../lib/sanity";
+import type { PortableTextBlock } from "@portabletext/types";
+
 
 type SanityPost = {
   title: string;
@@ -12,7 +14,8 @@ type SanityPost = {
   categorySlug?: string;
   categoryLabel?: string;
   imageUrl?: string;
-  body?: unknown[]; // Portable Text blocks
+ body?: PortableTextBlock[];
+ // Portable Text blocks
 };
 
 const QUERY = /* groq */ `
